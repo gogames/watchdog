@@ -438,6 +438,10 @@
 	function rm_server() {
 		var rm_server = $("#rm_server").val();
 		_H_del_server(rm_server, rm_server_success_handler, modal_error_handler);
+		if (rm_server == srv) {
+			srv = "";
+			_H_get_user(get_user_success_handler, error_handler);
+		}
 	}
 
 	function rm_server_success_handler(result) {
