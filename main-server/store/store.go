@@ -31,7 +31,6 @@ type StoreEngine interface {
 	Init() (Servers, Users, map[string]int64)
 
 	WriteUser(username string, u *User) error
-	AppendPingRet(server, location string, pr PingRet) error
 	BatchWritePingRets(server, location string, prs []PingRet) error
 }
 

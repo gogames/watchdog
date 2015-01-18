@@ -56,15 +56,15 @@ func (f *fileEngine) WriteUser(username string, u *User) error {
 	return ioutil.WriteFile(f.getUserFilePath(username), u.marshal(), os.ModePerm)
 }
 
-func (f *fileEngine) AppendPingRet(server string, location string, pr PingRet) (err error) {
-	defer func() {
-		if e := recover(); e != nil {
-			err = fmt.Errorf("%v", e)
-		}
-	}()
-	f.notExistThenMkdir(f.getServerDir(server))
-	return f.appendFile(f.getServerFilePath(server, location), pr.marshal(), os.ModePerm)
-}
+// func (f *fileEngine) AppendPingRet(server string, location string, pr PingRet) (err error) {
+// 	defer func() {
+// 		if e := recover(); e != nil {
+// 			err = fmt.Errorf("%v", e)
+// 		}
+// 	}()
+// 	f.notExistThenMkdir(f.getServerDir(server))
+// 	return f.appendFile(f.getServerFilePath(server, location), pr.marshal(), os.ModePerm)
+// }
 
 func (f *fileEngine) BatchWritePingRets(server string, location string, prs []PingRet) (err error) {
 	defer func() {
