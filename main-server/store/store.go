@@ -207,7 +207,7 @@ func (s *Store) AppendPingRet(server string, location string, pr PingRet) (err e
 			}
 			// pad the ping results to ease work of front end, the silly chart
 			var (
-				maxLength   = -1
+				maxLength   = 0
 				maxLocation string
 				padPrs      = make([]PingRet, 0)
 			)
@@ -218,13 +218,17 @@ func (s *Store) AppendPingRet(server string, location string, pr PingRet) (err e
 					maxLocation = loc
 				}
 			}
-			// get max length
-			if s.servers[server][maxLocation][maxLength-1].Time == pr.Time {
-				maxLength--
-			}
-			// pad default pingret to the location
-			for i := len(s.servers[server][location]); i < maxLength; i++ {
-				padPrs = append(padPrs, defaultPingRet(s.servers[server][maxLocation][i].Time))
+			// check maxLength first, in case of runtime error index out of range
+			// if maxLength == 0, there is no need to pad ping results
+			if maxLength != 0 {
+				// get max length
+				if s.servers[server][maxLocation][maxLength-1].Time == pr.Time {
+					maxLength--
+				}
+				// pad default pingret to the location
+				for i := len(s.servers[server][location]); i < maxLength; i++ {
+					padPrs = append(padPrs, defaultPingRet(s.servers[server][maxLocation][i].Time))
+				}
 			}
 			padPrs = append(padPrs, pr)
 			s.servers[server][location] = append(s.servers[server][location], padPrs...)

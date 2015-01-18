@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	flagLogFilePath        = flag.String("log", "/var/log/servermonitor/mainserver/logfile.log", "log file")
+	flagLogFilePath        = flag.String("log", "/var/log/watchdog/main-server/logfile.log", "log file")
 	flagLogLevel           = flag.Int("level", logs.LevelDebug, "log level")
 	flagPingNodeServerPort = flag.Int("pingport", 8563, "port to invoke ping node")
 	flagManagerPort        = flag.Int("managerport", 8773, "port to run manager")
