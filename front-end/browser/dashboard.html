@@ -375,7 +375,9 @@
 		$("#modal_title").text("Add Server");
 		$("#save_changes").attr("onclick", "add_server()");
 		$("#modal").on("shown.bs.modal", function(e) {
-			$("#new_server")[0].focus();
+			if ($("#new_server")[0] != null) {
+				$("#new_server")[0].focus();
+			}
 			document.onkeydown = function(event_e) {
 				if (window.event) {
 					event_e = window.event;
@@ -418,7 +420,9 @@
 		$("#modal_title").text("Remove Server");
 		$("#save_changes").attr("onclick", "rm_server()");
 		$("#modal").on("shown.bs.modal", function(e) {
-			$("#rm_server")[0].focus();
+			if ($("#rm_server")[0] != null) {
+				$("#rm_server")[0].focus();
+			}
 			document.onkeydown = function(event_e) {
 				if (window.event) {
 					event_e = window.event;
