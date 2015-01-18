@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"syscall"
 
-	"github.com/gogames/watchdog/main-server/store"
 	"github.com/gogames/utils/signal"
+	"github.com/gogames/watchdog/main-server/store"
 	"github.com/hprose/hprose-go/hprose"
 )
 
@@ -98,7 +98,7 @@ func (mainServerStub) DelServer(sid, username, server string) (signedIn bool, er
 	return
 }
 
-func (mainServerStub) GetMonitorResult(sid, username, server string) (ret map[store.Location][]store.PingRet, signedIn bool, err error) {
+func (mainServerStub) GetMonitorResult(sid, username, server string) (ret map[string][]store.PingRet, signedIn bool, err error) {
 	if v := sess.Get(sid, _SESS_KEY_USERNAME); v != nil {
 		un, ok := v.(string)
 		if !ok {
