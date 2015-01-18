@@ -15,6 +15,7 @@ var (
 
 const (
 	_MIN_LEN_SERVER_CHAN = 1 << 10
+	_DEFAULT_PING        = "0.000"
 )
 
 func Register(engineName string, f func() StoreEngine) error {
@@ -199,49 +200,50 @@ func (s *Store) AppendPingRet(server string, location string, pr PingRet) (err e
 				err = fmt.Errorf("server %v is not exist", server)
 				return
 			}
-			if _, ok := s.servers[ServerAddr(server)]; !ok {
-				s.servers[ServerAddr(server)] = make(map[Location][]PingRet)
+			if _, ok := s.servers[server]; !ok {
+				s.servers[server] = make(map[string][]PingRet)
 			}
-			if _, ok := s.servers[ServerAddr(server)][Location(location)]; !ok {
-				s.servers[ServerAddr(server)][Location(location)] = make([]PingRet, 0)
-				// find the longest location, iterate ping results, push into the new location
-				var max = -1
-				var tLoc Location
-				for loc, prs := range s.servers[ServerAddr(server)] {
-					if len(prs) > max {
-						max = len(prs)
-						tLoc = loc
-					}
-				}
-				for _, v := range s.servers[ServerAddr(server)][tLoc] {
-					if v.Time == pr.Time {
-						break
-					}
-					s.servers[ServerAddr(server)][Location(location)] =
-						append(s.servers[ServerAddr(server)][Location(location)],
-							PingRet{Time: v.Time, Ping: "0.000"})
-				}
-				s.servers[ServerAddr(server)][Location(location)] =
-					append(s.servers[ServerAddr(server)][Location(location)], pr)
-				err = s.storeEngine.BatchWritePingRets(server, location,
-					s.servers[ServerAddr(server)][Location(location)])
-			} else {
-				s.servers[ServerAddr(server)][Location(location)] =
-					append(s.servers[ServerAddr(server)][Location(location)], pr)
-				err = s.storeEngine.AppendPingRet(server, location, pr)
+			if _, ok := s.servers[server][location]; !ok {
+				s.servers[server][location] = make([]PingRet, 0)
 			}
+			// pad the ping results to ease work of front end, the silly chart
+			var (
+				maxLength   = -1
+				maxLocation string
+				padPrs      = make([]PingRet, 0)
+			)
+			// find the max
+			for loc, prs := range s.servers[server] {
+				if len(prs) > maxLength {
+					maxLength = len(prs)
+					maxLocation = loc
+				}
+			}
+			// get max length
+			if s.servers[server][maxLocation][maxLength-1].Time == pr.Time {
+				maxLength--
+			}
+			// pad default pingret to the location
+			for i := len(s.servers[server][location]); i < maxLength; i++ {
+				padPrs = append(padPrs, defaultPingRet(s.servers[server][maxLocation][i].Time))
+			}
+			padPrs = append(padPrs, pr)
+			s.servers[server][location] = append(s.servers[server][location], padPrs...)
+			err = s.storeEngine.BatchWritePingRets(server, location, padPrs)
 		})
 	})
 	return
 }
 
-func (s *Store) GetMonitorResult(username string, server string) (ret map[Location][]PingRet, err error) {
+func defaultPingRet(t string) PingRet { return PingRet{Time: t, Ping: _DEFAULT_PING} }
+
+func (s *Store) GetMonitorResult(username string, server string) (ret map[string][]PingRet, err error) {
 	s.withReadLock(func() {
 		if u, ok := s.users[username]; !ok {
 			err = fmt.Errorf("User %v not exist", username)
 		} else {
 			if _, ok := u.MonitorServers[server]; ok {
-				ret = s.servers[ServerAddr(server)]
+				ret = s.servers[server]
 			} else {
 				err = fmt.Errorf("You are not monitoring %v", server)
 			}

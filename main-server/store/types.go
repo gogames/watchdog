@@ -19,11 +19,11 @@ func (u User) marshal() []byte {
 	return b
 }
 
-type Servers map[ServerAddr]map[Location][]PingRet
+type Servers map[string]map[string][]PingRet
 
-type ServerAddr string
+// type ServerAddr string
 
-type Location string
+// type Location string
 
 type PingRet struct {
 	Ping string `json:"ping"`

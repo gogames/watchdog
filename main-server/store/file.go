@@ -125,12 +125,12 @@ func (f *fileEngine) serversWalkerFunc(path string, file os.FileInfo, err error)
 
 	if file.IsDir() {
 		f.cursor = file.Name()
-		if f.servers[ServerAddr(f.cursor)] == nil {
-			f.servers[ServerAddr(f.cursor)] = make(map[Location][]PingRet)
+		if f.servers[f.cursor] == nil {
+			f.servers[f.cursor] = make(map[string][]PingRet)
 		}
 		return filepath.Walk(path, f.serversWalkerFunc)
 	} else {
-		f.servers[ServerAddr(f.cursor)][Location(file.Name())] = f.getPingRetsFromPath(path)
+		f.servers[f.cursor][file.Name()] = f.getPingRetsFromPath(path)
 	}
 	return nil
 }
