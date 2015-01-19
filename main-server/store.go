@@ -55,7 +55,7 @@ func pingLoop() {
 									Time: tn.Format(_TIME_LAYOUT),
 								}
 								if err = storeEngine.AppendPingRet(server, location, p); err != nil {
-									logger.Critical("can not append ping result: %v\n", p)
+									logger.Critical("can not append ping result of %v %v: %v\n", server, p, err)
 								}
 							}(location, pc)
 						})
