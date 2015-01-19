@@ -175,8 +175,16 @@
 				}
 			});
 
-			// append servers
+			// sort monitorServers list
+			var serverlist = [];
 			for (var server in user.monitorServers) {
+				serverlist.push(server); 
+			}
+			serverlist.sort();
+
+			// append servers
+			for (var i in serverlist) {
+				var server = serverlist[i];
 				var h = '<li name="' + server + '"><a href="javascript:void(0)" onClick="show(this)">' + server + '<\/a><\/li>';
 				$(h).appendTo($("#servers"));
 
