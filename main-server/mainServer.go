@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"reflect"
 	"syscall"
@@ -18,6 +19,11 @@ const (
 type (
 	mainServerStub struct{}
 )
+
+func lookupServer(server string) error {
+	_, err := net.ResolveIPAddr("ip", server)
+	return err
+}
 
 // main server stub
 
@@ -68,6 +74,9 @@ func (mainServerStub) UpdatePassword(sid, username, oldP, newP string) (signedIn
 
 // update session life
 func (mainServerStub) AddServer(sid, username, server string) (signedIn bool, err error) {
+	if err = lookupServer(server); err != nil {
+		return
+	}
 	if v := sess.Get(sid, _SESS_KEY_USERNAME); v != nil {
 		un, ok := v.(string)
 		if !ok {
