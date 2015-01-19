@@ -95,9 +95,9 @@ func (s *Store) do(f func()) {
 	f()
 }
 
-func (s *Store) acquire() { *s.closeCounter = atomic.AddInt64(s.closeCounter, 1) }
+func (s *Store) acquire() { atomic.AddInt64(s.closeCounter, 1) }
 
-func (s *Store) release() { *s.closeCounter = atomic.AddInt64(s.closeCounter, -1) }
+func (s *Store) release() { atomic.AddInt64(s.closeCounter, -1) }
 
 func (s *Store) withWriteLock(f func()) {
 	s.rwl.Lock()
