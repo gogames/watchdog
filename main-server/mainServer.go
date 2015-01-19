@@ -24,6 +24,10 @@ type (
 // without signed in
 // auto sign the user in
 func (mainServerStub) Register(username, password string) (sid, un string, err error) {
+	if username == "" {
+		err = fmt.Errorf("Username can not be empty")
+		return
+	}
 	if err = storeEngine.AddUser(username, password); err != nil {
 		return
 	}
