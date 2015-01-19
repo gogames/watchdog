@@ -3,7 +3,7 @@ watchdog
 
 Monitoring servers by sending ICMP Echo request from different servers to the monitored servers.
 
-Take a tour here. http://mywatchdog.org/
+Try it out. http://watchdog.top/
 
 ### front-end
 
