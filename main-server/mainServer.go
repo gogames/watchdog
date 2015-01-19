@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"reflect"
+	"strings"
 	"syscall"
 
 	"github.com/gogames/utils/signal"
@@ -14,24 +15,21 @@ import (
 
 const (
 	_SESS_KEY_USERNAME = "username"
+	_EMPTY_STRING      = ""
+	_SLASH             = "/"
 )
 
 type (
 	mainServerStub struct{}
 )
 
-func lookupServer(server string) error {
-	_, err := net.ResolveIPAddr("ip", server)
-	return err
-}
-
 // main server stub
 
 // without signed in
 // auto sign the user in
 func (mainServerStub) Register(username, password string) (sid, un string, err error) {
-	if username == "" {
-		err = fmt.Errorf("Username can not be empty")
+	if username == _EMPTY_STRING || strings.Contains(username, _SLASH) {
+		err = fmt.Errorf("Username can neither be empty nor contain slash")
 		return
 	}
 	if err = storeEngine.AddUser(username, password); err != nil {
@@ -74,7 +72,7 @@ func (mainServerStub) UpdatePassword(sid, username, oldP, newP string) (signedIn
 
 // update session life
 func (mainServerStub) AddServer(sid, username, server string) (signedIn bool, err error) {
-	if err = lookupServer(server); err != nil {
+	if _, err = net.ResolveIPAddr("ip", server); err != nil {
 		return
 	}
 	if v := sess.Get(sid, _SESS_KEY_USERNAME); v != nil {
