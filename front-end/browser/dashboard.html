@@ -234,7 +234,13 @@
 			for (var location in ret) {
 				rets.push({location: location, ret: ret[location]});
 			}
-			rets.sort();
+			rets.sort(function(i, j) {
+				if (i.location > j.location) {
+					return 1;
+				} else {
+					return -1;
+				}
+			});
 
 			// parse result
 			for (var index in rets) {
