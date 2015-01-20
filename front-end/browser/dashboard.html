@@ -89,7 +89,7 @@
         </ul>
         <div id='toolbar'>
           <div class='btn-group'>
-            <a class='btn' data-toggle='toolbar-tooltip' href='javascript:void(0)' title='Refresh' onClick="refresh()">
+            <a class='btn' data-toggle='toolbar-tooltip' href='javascript:void(0)' title='Refresh' onClick="display_chart(srv);">
               <i class='icon-refresh'></i>
             </a>
           </div>
@@ -482,10 +482,6 @@
 		_H_get_user(get_user_success_handler, error_handler);
 	}
 
-
-	function refresh() {
-		window.location.reload();
-	}
 
 	// on load
 	$("body").on("submit", "form", function(event) { event.preventDefault(); });
