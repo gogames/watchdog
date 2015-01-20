@@ -229,16 +229,25 @@
 				}
 			}
 
-			// parse result
+			// sort
+			var rets = new Array();
 			for (var location in ret) {
-				var l 		= ret[location].length;
+				rets.push({location: location, ret: ret[location]});
+			}
+			rets.sort();
+
+			// parse result
+			for (var index in rets) {
+				var t_ret 	= rets[index].ret;
+				var location 	= rets[index].location;
+				var l 		= t_ret.length;
 				var x_data	= new Array();
 				var s_data 	= new Array();
 				for (var i = 0; i < l; i++) {
 					if (location == loc) {
-						x_data.push(ret[location][i].time);
+						x_data.push(t_ret[i].time);
 					}
-					s_data.push(ret[location][i].ping);
+					s_data.push(t_ret[i].ping);
 				}
 				var s = {
 						name: 	location,
