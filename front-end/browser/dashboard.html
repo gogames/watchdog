@@ -126,7 +126,7 @@
 	var init_view_points	= 288;
 	var error_index 	= 0;
 	var error_show_interval = 3000;
-	var global_user 	= new Object();
+	var global_email 	= ""; 
 
 	function show_error(msg) {
 		error_index++;
@@ -166,7 +166,7 @@
 		var user		= result[0];
 		var is_signed_in	= result[1];
 		if (is_signed_in) {
-			_global_user = user;
+			global_email = user.email;
 			if (!username_appended) {
 				username_appended = true;
 			  	var username = '<i class="icon-user"><\/i> ' + get_cookie_username() + ' <b class="caret"><\/b>';
@@ -408,7 +408,7 @@
 		$("#modal").on("shown.bs.modal", function (e) {
 			var dom_email = $("#email")[0];
 			if (dom_email != null) {
-				$("#email").val(global_user.email);
+				$("#email").val(global_email);
 				dom_email.focus();
 			}
 			document.onkeydown = function(event_e) {
