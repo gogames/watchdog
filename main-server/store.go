@@ -16,7 +16,7 @@ const (
 	_TIME_LAYOUT        = "2006-01-02 15:04"
 	_FROM               = "watchdog"
 	_SUBJECT            = "Alert"
-	_BODY               = "Dear %s,\n\tPing latency from %s to the server %s you are monitoring is %v on %v.\n\n\nThis is an alert automatically sent by http://watchdog.top/, please do not reply!\n\n"
+	_BODY               = "Dear %s,\n\n\tPing latency from %s to the server %s you are monitoring is %v on %v UTC.\n\n\tThis is an alert automatically sent by http://watchdog.top/, please do not reply!\n\n"
 )
 
 var (
@@ -87,11 +87,21 @@ func pingLoop() {
 }
 
 func alertLoop() {
+	var f = func(ea store.EmailAlert) {
+		if ea.Email == "" {
+			fmt.Printf("why the email is empty but still here: %v\n", ea.Username)
+		}
+		if err := sendmail.Send(_FROM, ea.Email, _SUBJECT,
+			fmt.Sprintf(_BODY,
+				ea.Username,
+				ea.Location,
+				ea.Server,
+				fmt.Sprintf("%.3f", ea.Latency),
+				ea.Timenow.Format(_TIME_LAYOUT))); err != nil {
+			logger.Info("send mail error: %v", err)
+		}
+	}
 	for {
-		ea := <-storeEngine.EmailALertChan
-		go sendmail.Send(_FROM,
-			ea.Email,
-			_SUBJECT,
-			fmt.Sprintf(_BODY, ea.Username, ea.Location, ea.Server, ea.Latency, ea.Timenow.Format(_TIME_LAYOUT)))
+		go f(<-storeEngine.EmailALertChan)
 	}
 }

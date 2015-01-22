@@ -90,6 +90,9 @@ func (s *Store) emailAlertLoop() {
 	var f = func(ai AlertInfo) {
 		for username, uai := range s.allServers[ai.Server] {
 			ea := newEmailAlert(username, uai.Email, uai.Threshold, ai)
+			if ea.Email == "" {
+				continue
+			}
 			if ea.shouldAlert() {
 				s.EmailALertChan <- ea
 			}
