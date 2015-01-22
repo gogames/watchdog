@@ -59,7 +59,7 @@
               <a href="javascript:void(0)" onClick="pop_update_password()">Update Password</a>
             </li>
             <li>
-              <a href="javascript:void(0)" onClick="pop_email_password()">Set Alert Email</a>
+              <a href="javascript:void(0)" onClick="pop_update_email()">Set Alert Email</a>
             </li>
             <li class='divider'></li>
             <li>
@@ -409,7 +409,7 @@
 
 				var int_keycode = event_e.charCode || event_e.keyCode;  
 				if (int_keycode == 13) {
-					if $("#email").is(":focus") {
+					if ($("#email").is(":focus")) {
 						update_email();
 					}
 				}
@@ -420,7 +420,7 @@
 
 	function update_email() {
 		var email = $("#email").val();
-		_H_update_password(email, update_email_success_handler, modal_error_handler);
+		_H_update_email(email, update_email_success_handler, modal_error_handler);
 	}
 
 	function update_email_success_handler(result) {
