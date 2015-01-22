@@ -408,7 +408,7 @@
 		$("#modal").on("shown.bs.modal", function (e) {
 			var dom_email = $("#email")[0];
 			if (dom_email != null) {
-				dom_email.val(global_user.email);
+				$("#email").val(global_user.email);
 				dom_email.focus();
 			}
 			document.onkeydown = function(event_e) {
