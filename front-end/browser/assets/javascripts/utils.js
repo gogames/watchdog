@@ -92,8 +92,8 @@ function _H_logout(success_handler, error_handler) {
 		    );
 }
 
-function _H_add_server(server, success_handler, error_handler) {
-	client.addServer(get_cookie_sid(), get_cookie_username(), server,
+function _H_add_server(server, threshold, success_handler, error_handler) {
+	client.addServer(get_cookie_sid(), get_cookie_username(), server, threshold,
 			function(result) 	{ success_handler(result); 	},
 			function(name, err) 	{ error_handler(name, err); 	}
 		    );
