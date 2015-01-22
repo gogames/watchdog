@@ -358,7 +358,10 @@
 		$("#modal_title").text("Update Password");
 		$("#save_changes").attr("onclick", "update_password()");
 		$("#modal").on("shown.bs.modal", function (e) {
-			$("#old_password")[0].focus();
+			var dom_old = $("#old_password")[0];
+			if (dom_old != null) {
+				dom_old.focus();
+			}
 			document.onkeydown = function(event_e) {
 				if (window.event) {
 					event_e = window.event;
@@ -401,7 +404,10 @@
 		$("#modal_title").text("Set Alert Email");
 		$("#save_changes").attr("onclick", "update_email()");
 		$("#modal").on("shown.bs.modal", function (e) {
-			$("#email")[0].focus();
+			var dom_email = $("#email")[0];
+			if (dom_email != null) {
+				dom_email.focus();
+			}
 			document.onkeydown = function(event_e) {
 				if (window.event) {
 					event_e = window.event;
@@ -443,8 +449,9 @@
 		$("#modal_title").text("Add Server");
 		$("#save_changes").attr("onclick", "add_server()");
 		$("#modal").on("shown.bs.modal", function(e) {
-			if ($("#new_server")[0] != null) {
-				$("#new_server")[0].focus();
+			var dom_new_server = $("#new_server")[0]
+			if (dom_new_server != null) {
+				dom_new_server.focus();
 			}
 			document.onkeydown = function(event_e) {
 				if (window.event) {
