@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"reflect"
+	"regexp"
 	"strings"
 	"syscall"
 
@@ -18,6 +19,8 @@ const (
 	_EMPTY_STRING      = ""
 	_SLASH             = "/"
 )
+
+var _REGEXP_EMAIL = regexp.MustCompile(`^(\w)+(\.\w+)*@(\w)+((\.\w+)+)$`)
 
 type (
 	mainServerStub struct{}
@@ -71,7 +74,29 @@ func (mainServerStub) UpdatePassword(sid, username, oldP, newP string) (signedIn
 }
 
 // update session life
-func (mainServerStub) AddServer(sid, username, server string) (signedIn bool, err error) {
+func (mainServerStub) UpdateEmail(sid, username, email string) (signedIn bool, err error) {
+	if !_REGEXP_EMAIL.MatchString(email) {
+		err = fmt.Errorf("Incorrect format of email: %v", email)
+		return
+	}
+	if v := sess.Get(sid, _SESS_KEY_USERNAME); v != nil {
+		un, ok := v.(string)
+		if !ok {
+			logger.Debug("the username is not type string, but %v", reflect.TypeOf(v).Name())
+			err = fmt.Errorf("Unexpected runtime error")
+		} else if un == username {
+			if err = storeEngine.UpdateEmail(username, email); err != nil {
+				return
+			}
+			err = sess.Update(sid)
+			signedIn = true
+		}
+	}
+	return
+}
+
+// update session life
+func (mainServerStub) AddServer(sid, username, server string, threshold float64) (signedIn bool, err error) {
 	if _, err = net.ResolveIPAddr("ip", server); err != nil {
 		return
 	}
@@ -81,7 +106,7 @@ func (mainServerStub) AddServer(sid, username, server string) (signedIn bool, er
 			logger.Debug("the username is not type string, but %v", reflect.TypeOf(v).Name())
 			err = fmt.Errorf("Unexpected runtime error")
 		} else if un == username {
-			if err = storeEngine.AddMonitorServer(username, server); err != nil {
+			if err = storeEngine.AddMonitorServer(username, server, threshold); err != nil {
 				return
 			}
 			err = sess.Update(sid)

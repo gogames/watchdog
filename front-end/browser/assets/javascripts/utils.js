@@ -5,14 +5,16 @@ var _HPROSE_FUNCS	= [ 	"addServer",
               		    	"login",
               		    	"logout",
               		    	"register",
-              		    	"updatePassword" ];
+              		    	"updatePassword",
+              		    	"updateEmail" 
+				];
 var _COOKIE_SID       	= "sid";
 var _COOKIE_USERNAME  	= "username";
 var _COOKIE_REMEMBER  	= "remember";
 var _Hour 		= 1000 * 60 * 60;
 var _Day 		= 24 * _Hour;
 var _EXPIRE		= 14;
-var client 		= new hprose.HttpClient("http://localhost:8683/", _HPROSE_FUNCS);
+var client 		= new hprose.HttpClient("http://watchdog.top:8683/", _HPROSE_FUNCS);
 
 // cookie operations
 function get_cookie_expire_date() {
@@ -106,6 +108,13 @@ function _H_del_server(server, success_handler, error_handler) {
 
 function _H_update_password(old_pass, new_pass, success_handler, error_handler) {
 	client.updatePassword(get_cookie_sid(), get_cookie_username(), old_pass, new_pass,
+			function(result) 	{ success_handler(result); 	},
+			function(name, err) 	{ error_handler(name, err); 	}
+		    );
+}
+
+function _H_update_email(email, success_handler, error_handler) {
+	client.updateEmail(get_cookie_sid(), get_cookie_username(), email,
 			function(result) 	{ success_handler(result); 	},
 			function(name, err) 	{ error_handler(name, err); 	}
 		    );

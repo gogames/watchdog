@@ -58,6 +58,9 @@
             <li>
               <a href="javascript:void(0)" onClick="pop_update_password()">Update Password</a>
             </li>
+            <li>
+              <a href="javascript:void(0)" onClick="pop_email_password()">Set Alert Email</a>
+            </li>
             <li class='divider'></li>
             <li>
               <a href="javascript:void(0)" onClick="sign_out()">Sign out</a>
@@ -385,6 +388,48 @@
 			setTimeout(function() { location.href = "index.html"; }, error_show_interval);
 		} else {
 			show_success("Successfully update password");
+		}
+	}
+
+	// update email 
+	function pop_update_email() {
+		destroy_modal_body();
+
+		var m_body = '<div class="row"><div class="col-lg-12"><form><fieldset class="text-center"><div class="form-group"><input id="email" class="form-control" placeholder="Alert Email" type="text"><\/div><div class="text-center"><\/div><\/fieldset><\/form><\/div><\/div>';
+
+		$(m_body).appendTo($("#modal_body"));
+		$("#modal_title").text("Set Alert Email");
+		$("#save_changes").attr("onclick", "update_email()");
+		$("#modal").on("shown.bs.modal", function (e) {
+			$("#email")[0].focus();
+			document.onkeydown = function(event_e) {
+				if (window.event) {
+					event_e = window.event;
+				}
+
+				var int_keycode = event_e.charCode || event_e.keyCode;  
+				if (int_keycode == 13) {
+					if $("#email").is(":focus") {
+						update_email();
+					}
+				}
+			}
+		});
+		$("#modal").modal("show");
+	}
+
+	function update_email() {
+		var email = $("#email").val();
+		_H_update_password(email, update_email_success_handler, modal_error_handler);
+	}
+
+	function update_email_success_handler(result) {
+		$("#modal").modal("hide");
+		if (!result) {
+			show_error("Please sign in first");
+			setTimeout(function() { location.href = "index.html"; }, error_show_interval);
+		} else {
+			show_success("Successfully set alert email address");
 		}
 	}
 

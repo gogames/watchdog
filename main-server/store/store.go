@@ -14,8 +14,10 @@ var (
 )
 
 const (
-	_MIN_LEN_SERVER_CHAN = 1 << 10
-	_DEFAULT_PING        = "0.000"
+	_MIN_LEN_SERVER_CHAN_BUFFER = 1 << 10
+	_DEFAULT_PING               = "0.000"
+	_TIME_LAYOUT                = "06-01-02 15:04"
+	_BUFFER                     = 1 << 10
 )
 
 func Register(engineName string, f func() StoreEngine) error {
@@ -28,7 +30,7 @@ func Register(engineName string, f func() StoreEngine) error {
 
 type StoreEngine interface {
 	LoadConfig(config string)
-	Init() (Servers, Users, map[string]int64)
+	Init() (Servers, Users, map[string]UserAlertInfos)
 
 	WriteUser(username string, u *User) error
 	BatchWritePingRets(server, location string, prs []PingRet) error
@@ -37,7 +39,7 @@ type StoreEngine interface {
 type Store struct {
 	servers    Servers
 	users      Users
-	allServers map[string]int64
+	allServers map[string]UserAlertInfos
 	rwl        sync.RWMutex
 
 	storeEngine StoreEngine
@@ -45,13 +47,16 @@ type Store struct {
 	AddServerChan  chan string
 	KickServerChan chan string
 
+	EmailALertChan chan EmailAlert
+	alertInfoChan  chan AlertInfo
+
 	closeCounter *int64
 	isClosed     bool
 }
 
 func NewStore() *Store { return &Store{closeCounter: new(int64)} }
 
-func (s *Store) SetStoreEngine(engineName string, config string) *Store {
+func (s *Store) SetStoreEngine(engineName, config string) *Store {
 	if f, ok := engines[engineName]; !ok {
 		panic(fmt.Errorf("store engine %v does not exist", engineName))
 	} else {
@@ -63,8 +68,8 @@ func (s *Store) SetStoreEngine(engineName string, config string) *Store {
 	s.servers, s.users, s.allServers = s.storeEngine.Init()
 
 	var l = len(s.allServers)
-	if l < _MIN_LEN_SERVER_CHAN {
-		l = _MIN_LEN_SERVER_CHAN
+	if l < _MIN_LEN_SERVER_CHAN_BUFFER {
+		l = _MIN_LEN_SERVER_CHAN_BUFFER
 	}
 	s.AddServerChan = make(chan string, l)
 	for server := range s.allServers {
@@ -73,7 +78,27 @@ func (s *Store) SetStoreEngine(engineName string, config string) *Store {
 
 	s.KickServerChan = make(chan string, l)
 
+	s.EmailALertChan = make(chan EmailAlert, _BUFFER)
+	s.alertInfoChan = make(chan AlertInfo, _BUFFER)
+
+	go s.emailAlertLoop()
+
 	return s
+}
+
+func (s *Store) emailAlertLoop() {
+	var f = func(ai AlertInfo) {
+		for username, uai := range s.allServers[ai.Server] {
+			ea := newEmailAlert(username, uai.Email, uai.Threshold, ai)
+			if ea.shouldAlert() {
+				s.EmailALertChan <- ea
+			}
+		}
+	}
+	for {
+		ai := <-s.alertInfoChan
+		s.withReadLock(func() { f(ai) })
+	}
 }
 
 func (s *Store) Close() {
@@ -117,7 +142,7 @@ func (s *Store) GetUser(username string) (u *User) {
 	return
 }
 
-func (s *Store) UpdatePassword(username string, oldpassword, newpassword string) (err error) {
+func (s *Store) UpdatePassword(username, oldpassword, newpassword string) (err error) {
 	s.do(func() {
 		s.withReadLock(func() {
 			if u, ok := s.users[username]; ok {
@@ -133,7 +158,24 @@ func (s *Store) UpdatePassword(username string, oldpassword, newpassword string)
 	return
 }
 
-func (s *Store) AddUser(username string, password string) (err error) {
+func (s *Store) UpdateEmail(username, email string) (err error) {
+	s.do(func() {
+		s.withReadLock(func() {
+			if u, ok := s.users[username]; ok {
+				u.Email = email
+				for server, uais := range s.allServers {
+					if uai, ok := uais[username]; ok {
+						s.allServers[server][username] = UserAlertInfo{Email: email, Threshold: uai.Threshold}
+					}
+				}
+				err = s.storeEngine.WriteUser(username, u)
+			}
+		})
+	})
+	return
+}
+
+func (s *Store) AddUser(username, password string) (err error) {
 	s.do(func() {
 		s.withWriteLock(func() {
 			if _, ok := s.users[username]; ok {
@@ -149,17 +191,17 @@ func (s *Store) AddUser(username string, password string) (err error) {
 }
 
 // monitor operations
-func (s *Store) DeleteMonitorServer(username string, server string) (err error) {
+func (s *Store) DeleteMonitorServer(username, server string) (err error) {
 	s.do(func() {
 		s.withWriteLock(func() {
 			if u, ok := s.users[username]; !ok {
 				err = fmt.Errorf("user %v not exist", username)
 			} else {
-				if u.MonitorServers[server] {
+				if _, ok := u.MonitorServers[server]; ok {
 					delete(u.MonitorServers, server)
-					s.allServers[server]--
+					delete(s.allServers[server], username)
 				}
-				if s.allServers[server] <= 0 {
+				if len(s.allServers[server]) <= 0 {
 					delete(s.allServers, server)
 					s.KickServerChan <- server
 				}
@@ -170,21 +212,18 @@ func (s *Store) DeleteMonitorServer(username string, server string) (err error) 
 	return
 }
 
-func (s *Store) AddMonitorServer(username string, server string) (err error) {
+func (s *Store) AddMonitorServer(username, server string, threshold float64) (err error) {
 	s.do(func() {
 		s.withReadLock(func() {
 			if u, ok := s.users[username]; !ok {
 				err = fmt.Errorf("User %v not exist", username)
 			} else {
-				if u.MonitorServers[server] {
-					err = fmt.Errorf("%v is already in monitoring list", server)
-					return
-				}
-				u.MonitorServers[server] = true
+				u.MonitorServers[server] = threshold
 				if _, ok := s.allServers[server]; !ok {
+					s.allServers[server] = make(UserAlertInfos)
 					s.AddServerChan <- server
 				}
-				s.allServers[server]++
+				s.allServers[server][username] = UserAlertInfo{Email: u.Email, Threshold: threshold}
 				err = s.storeEngine.WriteUser(username, u)
 			}
 		})
@@ -192,10 +231,10 @@ func (s *Store) AddMonitorServer(username string, server string) (err error) {
 	return
 }
 
-func (s *Store) AppendPingRet(server string, location string, pr PingRet) (err error) {
+func (s *Store) AppendPingRet(server, location string, latency float64, tn time.Time) (err error) {
 	s.do(func() {
 		s.withWriteLock(func() {
-			if s.allServers[server] <= 0 {
+			if len(s.allServers[server]) <= 0 {
 				err = fmt.Errorf("server %v is not exist", server)
 				return
 			}
@@ -209,6 +248,7 @@ func (s *Store) AppendPingRet(server string, location string, pr PingRet) (err e
 			var (
 				maxLength   = 0
 				maxLocation string
+				pr          = PingRet{Ping: fmt.Sprintf("%.3f", latency), Time: tn.Format(_TIME_LAYOUT)}
 				padPrs      = make([]PingRet, 0)
 			)
 			// find the max
@@ -235,12 +275,13 @@ func (s *Store) AppendPingRet(server string, location string, pr PingRet) (err e
 			err = s.storeEngine.BatchWritePingRets(server, location, padPrs)
 		})
 	})
+	s.alertInfoChan <- newAlertInfo(server, location, latency, tn)
 	return
 }
 
 func defaultPingRet(t string) PingRet { return PingRet{Time: t, Ping: _DEFAULT_PING} }
 
-func (s *Store) GetMonitorResult(username string, server string) (ret map[string][]PingRet, err error) {
+func (s *Store) GetMonitorResult(username, server string) (ret map[string][]PingRet, err error) {
 	s.withReadLock(func() {
 		if u, ok := s.users[username]; !ok {
 			err = fmt.Errorf("User %v not exist", username)

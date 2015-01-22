@@ -7,7 +7,9 @@ const (
 
 type redisEngine struct{}
 
-func (r *redisEngine) Init() (servers Servers, users Users, allServers map[string]int64)     { return }
+func (r *redisEngine) Init() (servers Servers, users Users, allServers map[string]UserAlertInfos) {
+	return
+}
 func (r *redisEngine) LoadConfig(s string)                                                   {}
 func (r *redisEngine) WriteUser(username string, u *User) (err error)                        { return }
 func (r *redisEngine) BatchWritePingRets(server, location string, prs []PingRet) (err error) { return }

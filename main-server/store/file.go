@@ -21,7 +21,7 @@ type fileEngine struct {
 
 	servers    Servers
 	users      Users
-	allServers map[string]int64
+	allServers map[string]UserAlertInfos
 }
 
 func init() {
@@ -32,7 +32,7 @@ func newFileEngine() StoreEngine {
 	return &fileEngine{
 		servers:    make(Servers),
 		users:      make(Users),
-		allServers: make(map[string]int64),
+		allServers: make(map[string]UserAlertInfos),
 	}
 }
 
@@ -83,7 +83,7 @@ func (f *fileEngine) BatchWritePingRets(server string, location string, prs []Pi
 	return f.appendFile(f.getServerFilePath(server, location), bs.Bytes(), os.ModePerm)
 }
 
-func (f *fileEngine) Init() (Servers, Users, map[string]int64) {
+func (f *fileEngine) Init() (Servers, Users, map[string]UserAlertInfos) {
 	defer func() {
 		f.servers = nil
 		f.users = nil
@@ -161,9 +161,13 @@ func (f *fileEngine) usersWalkerFunc(path string, file os.FileInfo, err error) e
 
 	if !file.IsDir() {
 		u := f.getUserFromPath(path)
-		f.users[file.Name()] = u
-		for server := range u.MonitorServers {
-			f.allServers[server]++
+		username := file.Name()
+		f.users[username] = u
+		for server, threshold := range u.MonitorServers {
+			if _, ok := f.allServers[server]; !ok {
+				f.allServers[server] = make(UserAlertInfos)
+			}
+			f.allServers[server][username] = UserAlertInfo{Email: u.Email, Threshold: threshold}
 		}
 	}
 	return nil
