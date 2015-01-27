@@ -18,6 +18,7 @@ const (
 	_SESS_KEY_USERNAME = "username"
 	_EMPTY_STRING      = ""
 	_SLASH             = "/"
+	_MAX_NUM_RESULT    = 6 * 24 * 3
 )
 
 var _REGEXP_EMAIL = regexp.MustCompile(`^(\w)+(\.\w+)*@(\w)+((\.\w+)+)$`)
@@ -141,8 +142,19 @@ func (mainServerStub) GetMonitorResult(sid, username, server string) (ret map[st
 			logger.Debug("the username is not type string, but %v", reflect.TypeOf(v).Name())
 			err = fmt.Errorf("Unexpected runtime error")
 		} else if un == username {
-			ret, err = storeEngine.GetMonitorResult(username, server)
+			var tRet map[string][]store.PingRet
+			tRet, err = storeEngine.GetMonitorResult(username, server)
+			if err != nil {
+				return
+			}
 			signedIn = true
+
+			ret = make(map[string][]store.PingRet)
+			for s, prs := range tRet {
+				if len(prs) > _MAX_NUM_RESULT {
+					ret[s] = prs[len(prs)-_MAX_NUM_RESULT:]
+				}
+			}
 		}
 	}
 	return
