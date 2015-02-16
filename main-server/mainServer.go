@@ -153,6 +153,8 @@ func (mainServerStub) GetMonitorResult(sid, username, server string) (ret map[st
 			for s, prs := range tRet {
 				if len(prs) > _MAX_NUM_RESULT {
 					ret[s] = prs[len(prs)-_MAX_NUM_RESULT:]
+				} else {
+					ret[s] = prs
 				}
 			}
 		}
