@@ -42,7 +42,6 @@ func pingLoop() {
 			pr, err := pc.Ping(server)
 			if err != nil {
 				logger.Error("can not ping server %s: %v\n", server, err)
-				return
 			}
 			if err = storeEngine.AppendPingRet(server, location, pr.Avg, tn); err != nil {
 				logger.Critical("can not append ping result of %v: %v\n", server, err)
